@@ -75,6 +75,16 @@ npm run dev
    - 온라인 운영반은 "제목\|유튜브URL" 형식으로 강의를 한 줄씩 입력합니다.
    - 유튜브 링크는 반드시 **비공개(unlisted)** 링크를 사용하세요.
 
+### 5) AI 커리큘럼 제작 (선택)
+
+`/admin/ai-curriculum`에서 Gemini(`gemini-3.5-flash-lite`)로 온라인 운영반
+커리큘럼 초안을 생성할 수 있습니다. Gemini API 키는 서버에 환경변수로 저장하지
+않고, 관리자가 화면에서 **매 요청마다 직접 입력**합니다 (`lib/gemini.ts`,
+`app/api/admin/ai-curriculum/route.ts` — 키는 저장/로깅되지 않고 해당 요청에만
+사용됩니다). 키는 [Google AI Studio](https://aistudio.google.com/apikey)에서
+발급받으세요. 생성 결과 하단의 "강의 목록" 블록은 상품 등록 폼의 강의 목록
+입력란에 그대로 붙여넣고 URL만 실제 링크로 교체하면 됩니다.
+
 ## Netlify 배포
 
 이 저장소는 원래 Vercel을 가정해 만들었지만 Netlify로도 배포할 수 있습니다.

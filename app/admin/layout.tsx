@@ -17,6 +17,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <Link href="/admin/products" className="font-semibold text-brand">
           상품 관리
         </Link>
+        <Link href="/admin/ai-curriculum" className="font-semibold text-brand">
+          AI 커리큘럼
+        </Link>
       </nav>
       {children}
     </div>
