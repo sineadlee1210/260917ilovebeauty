@@ -3,12 +3,19 @@
 // middleware.ts can layer route-protection logic on top.
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { requireEnv } from "@/lib/env";
+import { requireEnv, isSupabaseConfigured } from "@/lib/env";
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({
     request: { headers: request.headers },
   });
+
+  // /mypage, /content, /admin still redirect to /login below (middleware.ts
+  // treats a null user as unauthenticated) — this just stops the redirect
+  // itself from crashing when Supabase isn't set up yet.
+  if (!isSupabaseConfigured()) {
+    return { response, user: null };
+  }
 
   const supabase = createServerClient(
     requireEnv("NEXT_PUBLIC_SUPABASE_URL"),
@@ -29,9 +36,17 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  return { response, user };
+  // Same reasoning as isSupabaseConfigured() above, one level deeper: a
+  // reachable-but-wrong URL, a paused project, or a network blip must not
+  // turn every gated route into a 500 — fail closed to "not signed in" and
+  // let the redirect below handle it.
+  try {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    return { response, user };
+  } catch (err) {
+    console.error("updateSession failed:", err);
+    return { response, user: null };
+  }
 }

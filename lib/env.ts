@@ -14,3 +14,15 @@ export function requireEnv(name: string): string {
   }
   return value;
 }
+
+// Lets pages/layouts that run on every request (the root layout's <Header>,
+// middleware) check config up front and degrade gracefully — render as
+// "logged out" / "no products yet" — instead of every visitor hitting a
+// 500 because Supabase isn't set up yet. Features that genuinely need
+// Supabase (login, checkout, gated content, admin) still end up gated
+// behind "not logged in", which is the correct default anyway.
+export function isSupabaseConfigured(): boolean {
+  return Boolean(
+    process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  );
+}
