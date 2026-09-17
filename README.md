@@ -75,6 +75,38 @@ npm run dev
    - 온라인 운영반은 "제목\|유튜브URL" 형식으로 강의를 한 줄씩 입력합니다.
    - 유튜브 링크는 반드시 **비공개(unlisted)** 링크를 사용하세요.
 
+## Netlify 배포
+
+이 저장소는 원래 Vercel을 가정해 만들었지만 Netlify로도 배포할 수 있습니다.
+루트의 `netlify.toml`이 `@netlify/plugin-nextjs`를 명시적으로 선언하고
+`NODE_VERSION = "20"`을 고정합니다 (Next.js 15.5는 Node 18.18+/20+ 필요).
+
+### "Application error: a server-side exception has occurred" + Digest 만 보일 때
+
+브라우저에는 원래 실제 에러가 노출되지 않습니다 (Next.js가 프로덕션에서
+의도적으로 숨기는 동작이라, 이건 버그가 아닙니다). **Netlify 대시보드 →
+Site → Logs → Functions**에서 해당 digest를 가진 함수 로그를 확인하세요.
+
+가장 흔한 원인 — 환경변수 누락:
+
+- `lib/supabase/client.ts`, `lib/supabase/server.ts`, `lib/supabase/middleware.ts`는
+  모두 `requireEnv()`를 통해 필수 환경변수를 읽습니다. 값이 없으면
+  `Missing required environment variable: <이름>` 형태로 **함수 로그에 정확히
+  어떤 변수가 빠졌는지** 나옵니다.
+- 루트 레이아웃(`app/layout.tsx`)이 모든 페이지에서 `<Header />`를 렌더링하고,
+  `Header`는 서버 컴포넌트에서 `getCurrentUser()` → Supabase 서버 클라이언트를
+  즉시 생성합니다. 즉 `NEXT_PUBLIC_SUPABASE_URL`/`NEXT_PUBLIC_SUPABASE_ANON_KEY`가
+  Netlify에 설정되어 있지 않으면 **사이트 전체 페이지**가 500으로 죽습니다.
+  (`npm run build`는 이 값들이 없어도 통과합니다 — 모든 라우트가 동적이라
+  빌드 시점에는 실행되지 않고, 런타임에 처음 요청이 올 때만 터지기 때문입니다.)
+- Netlify는 **Site configuration → Environment variables**에 등록한 값을
+  Production/Deploy Preview/Branch deploy 각 컨텍스트별로 따로 적용합니다.
+  로컬 `.env.local`과 Netlify에 등록한 변수 이름·값·적용 컨텍스트가 정확히
+  일치하는지 확인하세요. 최소한 아래 표의 변수 전부가 있어야 합니다
+  (`NEXT_PUBLIC_` 접두사가 붙은 값은 브라우저에도 내려가므로 오타에 특히 취약합니다).
+- 값을 바꾼 뒤에는 **재배포(Clear cache and deploy)**가 필요합니다. 환경변수만
+  바꾸고 캐시된 빌드를 그대로 쓰면 반영되지 않습니다.
+
 ## 환경변수 (`.env.local.example` 참고)
 
 | 변수 | 설명 |
